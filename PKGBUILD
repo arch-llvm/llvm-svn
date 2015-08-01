@@ -1,0 +1,278 @@
+# Maintainer: Armin K. <krejzi at email dot com>
+# Contributor: Christian Babeux <christian.babeux@0x80.ca>
+# Contributor: Thomas Dziedzic < gostrc at gmail >
+# Contributor: Roberto Alsina <ralsina@kde.org>
+# Contributor: Tomas Lindquist Olsen <tomas@famolsen.dk>
+# Contributor: Anders Bergh <anders@archlinuxppc.org>
+# Contributor: Tomas Wilhelmsson <tomas.wilhelmsson@gmail.com>
+# Contributor: Luchesar V. ILIEV <luchesar%2eiliev%40gmail%2ecom>
+
+pkgbase=llvm-svn
+pkgname=('llvm-svn' 'llvm-libs-svn' 'llvm-ocaml-svn' 'clang-svn' 'clang-analyzer-svn' 'clang-tools-extra-svn')
+_pkgname='llvm'
+pkgver=3.8.0_r243840
+pkgrel=1
+arch=('i686' 'x86_64')
+url="http://llvm.org"
+license=('custom:University of Illinois')
+makedepends=('subversion' 'libffi' 'python2' 'ocaml-ctypes' 'ocaml-findlib' 'python-sphinx' 'chrpath')
+
+# this is always the latest svn so debug info can be useful
+options=('staticlibs' '!strip')
+
+source=("${_pkgname}::svn+http://llvm.org/svn/llvm-project/llvm/trunk"
+        "clang::svn+http://llvm.org/svn/llvm-project/cfe/trunk"
+        "clang-tools-extra::svn+http://llvm.org/svn/llvm-project/clang-tools-extra/trunk"
+        "compiler-rt::svn+http://llvm.org/svn/llvm-project/compiler-rt/trunk"
+        llvm-Config-llvm-config.h)
+sha256sums=('SKIP'
+            'SKIP'    
+            'SKIP'
+            'SKIP'
+            '597dc5968c695bbdbb0eac9e8eb5117fcd2773bc91edf5ec103ecffffab8bc48')
+
+_ocamlver()
+{
+    pacman -Q ocaml | awk '{print $2}' | cut -d - -f1 | cut -d . -f1,2,3
+}
+
+pkgver()
+{
+    cd "${srcdir}/${_pkgname}"
+    echo $(sed -n '/^AC_INIT/s|^.*,\[\([[:digit:]\.]\+\)svn\],.*$|\1|p' \
+        autoconf/configure.ac)_r$(svnversion | tr -d [A-z])
+}
+
+prepare() {
+    cd "${srcdir}/${_pkgname}"
+
+    svn export --force "${srcdir}/clang" tools/clang
+    svn export --force "${srcdir}/clang-tools-extra" tools/clang/tools/extra
+    svn export --force "${srcdir}/compiler-rt" projects/compiler-rt
+
+    # Fix docs installation directory
+    sed -e 's|^\([[:blank:]]*DESTINATION[[:blank:]]\+\)docs/html|\1share/doc|' \
+        -e 's|^\([[:blank:]]*DESTINATION[[:blank:]]\+\)docs/ocaml/html|\1share/doc/ocaml|' \
+        -i docs/CMakeLists.txt
+
+    mkdir -p "${srcdir}/build"
+}
+
+build() {
+    cd "${srcdir}/build"
+
+    export LLVM_CONFIG="/usr/lib/llvm/llvm-config"
+
+    export PKG_CONFIG_PATH="/usr/lib/pkgconfig"
+    _ffi_include_flags=$(pkg-config --cflags-only-I libffi)
+    _ffi_libs_flags=$(pkg-config --libs-only-L libffi)
+
+    cmake -G "Unix Makefiles" \
+        -DCMAKE_BUILD_TYPE:STRING=Release \
+        -DCMAKE_INSTALL_PREFIX:PATH=/usr \
+        -DBUILD_SHARED_LIBS:BOOL=ON \
+        -DLLVM_APPEND_VC_REV:BOOL=ON \
+        -DLLVM_ENABLE_RTTI:BOOL=ON \
+        -DLLVM_ENABLE_FFI:BOOL=ON \
+        -DFFI_INCLUDE_DIR:PATH=${_ffi_include_flags#-I} \
+        -DFFI_LIBRARY_DIR:PATH=${_ffi_libs_flags#-L} \
+        -DLLVM_BUILD_DOCS:BOOL=ON \
+        -DLLVM_ENABLE_SPHINX:BOOL=ON \
+        -DSPHINX_OUTPUT_HTML:BOOL=ON \
+        -DSPHINX_OUTPUT_MAN:BOOL=ON \
+        -DSPHINX_WARNINGS_AS_ERRORS:BOOL=OFF \
+        -DLLVM_BUILD_LLVM_DYLIB:BOOL=ON \
+        ../${_pkgname}
+
+    # Use only one thread to avoid timing errors
+    make -j1 ocaml_doc
+    make -j1 depend
+    make -j1
+}
+
+package_llvm-svn() {
+    pkgdesc="Low Level Virtual Machine"
+    depends=("llvm-libs-svn=$pkgver-$pkgrel" 'perl')
+    provides=('llvm')
+    replaces=('llvm')
+    conflicts=('llvm')
+
+    cd "${srcdir}/build"
+
+    # Exclude the clang directory, since it'll be installed in a separate package
+    sed -i \
+        "s|^\([[:blank:]]*include(\"${srcdir}/build/tools/clang/cmake_install.cmake\")\)$|#\1|" \
+        tools/cmake_install.cmake
+
+    # Use only one thread to avoid timing errors
+    make -j1 DESTDIR="${pkgdir}" install
+
+    # The runtime library gets installed in llvm-libs
+    rm -f "${pkgdir}"/usr/lib/libLLVM.so{,.*}
+
+    # Clang libraries and OCaml bindings go to separate packages
+    rm -rf "${srcdir}"/{clang,ocaml.{doc,lib}}
+    mv "${pkgdir}/usr/lib/clang" "${srcdir}/clang"
+    mv "${pkgdir}/usr/lib/ocaml" "${srcdir}/ocaml.lib"
+    mv "${pkgdir}/usr/share/doc/ocaml" "${srcdir}/ocaml.doc"
+
+    # Get rid of example Hello transformation
+    rm -f "${pkgdir}"/usr/lib/*LLVMHello.*
+
+    if [[ $CARCH == x86_64 ]]; then
+        # Needed for multilib (https://bugs.archlinux.org/task/29951)
+        # Header stubs are taken from Fedora
+        #for _header in config llvm-config; do
+        mv "${pkgdir}/usr/include/llvm/Config/llvm-config"{,-64}.h
+        cp "${srcdir}/llvm-Config-llvm-config.h" "${pkgdir}/usr/include/llvm/Config/llvm-config.h"
+    fi
+
+    # Install Python bindings
+    install -m755 -d "${pkgdir}/usr/lib/python2.7/site-packages"
+    cp -r "${srcdir}/llvm/bindings/python/llvm" \
+        "${pkgdir}/usr/lib/python2.7/site-packages/"
+    python2 -m compileall "${pkgdir}/usr/lib/python2.7/site-packages/llvm"
+    python2 -O -m compileall "${pkgdir}/usr/lib/python2.7/site-packages/llvm"
+
+    install -Dm644 "${srcdir}/${_pkgname}/LICENSE.TXT" "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}
+
+package_llvm-libs-svn() {
+    pkgdesc="Low Level Virtual Machine (runtime library)"
+    depends=('gcc-libs' 'zlib' 'libffi' 'ncurses')
+    provides=('llvm-libs')
+    replaces=('llvm-libs')
+    conflicts=('llvm-libs')
+
+    cd "${srcdir}/build"
+
+    make DESTDIR="${pkgdir}" install-LLVM
+
+    install -Dm644 "${srcdir}/${_pkgname}/LICENSE.TXT" "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}
+
+package_llvm-ocaml-svn() {
+    pkgdesc="OCaml bindings for LLVM"
+    depends=("llvm-svn=$pkgver-$pkgrel" "ocaml=$(_ocamlver)" 'ocaml-ctypes')
+    provides=('llvm-ocaml')
+    replaces=('llvm-ocaml')
+    conflicts=('llvm-ocaml')
+
+    cd "${srcdir}/build"
+
+    install -m755 -d "${pkgdir}/usr/lib"
+    install -m755 -d "${pkgdir}/usr/share/doc"
+    cp -a "${srcdir}/ocaml.lib" "${pkgdir}/usr/lib/ocaml"
+    cp -a "${srcdir}/ocaml.doc" "${pkgdir}/usr/share/doc/ocaml"
+
+   install -Dm644 "${srcdir}/${_pkgname}/LICENSE.TXT" "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}
+
+package_clang-svn() {
+    pkgdesc="C language family frontend for LLVM"
+    url="http://clang.llvm.org/"
+    depends=("llvm-svn=$pkgver-$pkgrel" 'gcc')
+    provides=('clang')
+    replaces=('clang')
+    conflicts=('clang')
+
+    cd "${srcdir}/build/tools/clang"
+
+    # Exclude the extra directory, since it'll be installed in a separate package
+    sed -i \
+        "s|^\([[:blank:]]*include(\"${srcdir}/build/tools/clang/tools/extra/cmake_install.cmake\")\)$|#\1|" \
+        tools/cmake_install.cmake
+
+    # We move the extra tools directory out of the tree so it won't get
+    # installed and then we bring it back in for the clang-tools-extra package
+    #rm -rf "${srcdir}/extra"
+    #mv tools/extra "${srcdir}/"
+
+    make DESTDIR="${pkgdir}" install
+
+    #rm -rf tools/extra
+    #mv "${srcdir}/extra" tools/
+
+    # Install clang-format editor integration files (FS#38485)
+    # Destination paths are copied from clang-format/CMakeLists.txt
+    install -m755 -d "$pkgdir/usr/share/clang"
+    (
+        cd "${srcdir}/llvm/tools/clang/tools/clang-format"
+        cp clang-format-diff.py \
+            clang-format-sublime.py \
+            clang-format.el \
+            clang-format.py \
+            "${pkgdir}/usr/share/clang/"
+
+        cp git-clang-format "${pkgdir}/usr/bin/"
+
+        sed -e 's|/usr/bin/python$|&2|' \
+            -i "${pkgdir}/usr/bin/git-clang-format" \
+            -i "${pkgdir}/usr/share/clang/clang-format-diff.py"
+    )
+
+    # Install Python bindings
+    install -m755 -d "${pkgdir}/usr/lib/python2.7/site-packages"
+    cp -r "${srcdir}/llvm/tools/clang/bindings/python/clang" \
+        "${pkgdir}/usr/lib/python2.7/site-packages/"
+    python2 -m compileall "${pkgdir}/usr/lib/python2.7/site-packages/clang"
+    python2 -O -m compileall "${pkgdir}/usr/lib/python2.7/site-packages/clang"
+
+    # Install html docs
+    cp -r docs/html/* "${pkgdir}/usr/share/doc/clang/html/"
+    rm -r "${pkgdir}/usr/share/doc/clang/html/_sources"
+
+    install -Dm644 "${srcdir}/${_pkgname}/LICENSE.TXT" "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}
+
+package_clang-analyzer-svn() {
+    pkgdesc="A source code analysis framework"
+    url="http://clang-analyzer.llvm.org/"
+    depends=("clang-svn=$pkgver-$pkgrel" 'python2')
+    provides=('clang-analyzer')
+    replaces=('clang-analyzer')
+    conflicts=('clang-analyzer')
+
+    cd "${srcdir}/llvm/tools/clang"
+
+    install -m755 -d "${pkgdir}"/usr/{bin,lib/clang-analyzer}
+    for _tool in scan-{build,view}; do
+        cp -r tools/${_tool} "${pkgdir}/usr/lib/clang-analyzer/"
+        ln -s /usr/lib/clang-analyzer/${_tool}/${_tool} "${pkgdir}/usr/bin/"
+    done
+
+    # scan-build looks for clang within the same directory
+    ln -s /usr/bin/clang "${pkgdir}/usr/lib/clang-analyzer/scan-build/"
+
+    # Relocate man page
+    install -m755 -d "${pkgdir}/usr/share/man/man1"
+    mv "${pkgdir}/usr/lib/clang-analyzer/scan-build/scan-build.1" \
+       "${pkgdir}/usr/share/man/man1/"
+
+    # Use Python 2
+    sed -e 's|env python$|&2|' \
+        -e 's|/usr/bin/python$|&2|' \
+        -i "${pkgdir}/usr/lib/clang-analyzer/scan-view/scan-view" \
+           "${pkgdir}/usr/lib/clang-analyzer/scan-build/set-xcode-analyzer"
+
+    # Compile Python scripts
+    python2 -m compileall "${pkgdir}/usr/lib/clang-analyzer"
+    python2 -O -m compileall "${pkgdir}/usr/lib/clang-analyzer"
+
+    install -Dm644 "${srcdir}/${_pkgname}/LICENSE.TXT" "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}
+
+package_clang-tools-extra-svn() {
+    pkgdesc="Extra tools built using Clang's tooling APIs"
+    url="http://clang.llvm.org/"
+    depends=("clang-svn=$pkgver-$pkgrel")
+    provides=('clang-tools-extra')
+    replaces=('clang-tools-extra')
+    conflicts=('clang-tools-extra')
+
+    cd "${srcdir}/build/tools/clang/tools/extra"
+
+    make DESTDIR="${pkgdir}" install
+
+    install -Dm644 "${srcdir}/${_pkgname}/LICENSE.TXT" "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}
