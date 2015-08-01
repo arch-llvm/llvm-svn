@@ -10,7 +10,7 @@
 pkgbase=llvm-svn
 pkgname=('llvm-svn' 'llvm-libs-svn' 'llvm-ocaml-svn' 'clang-svn' 'clang-analyzer-svn' 'clang-tools-extra-svn')
 _pkgname='llvm'
-pkgver=3.8.0_r243840
+pkgver=3.8.0_r243841
 pkgrel=1
 arch=('i686' 'x86_64')
 url="http://llvm.org"
@@ -183,15 +183,7 @@ package_clang-svn() {
         "s|^\([[:blank:]]*include(\"${srcdir}/build/tools/clang/tools/extra/cmake_install.cmake\")\)$|#\1|" \
         tools/cmake_install.cmake
 
-    # We move the extra tools directory out of the tree so it won't get
-    # installed and then we bring it back in for the clang-tools-extra package
-    #rm -rf "${srcdir}/extra"
-    #mv tools/extra "${srcdir}/"
-
     make DESTDIR="${pkgdir}" install
-
-    #rm -rf tools/extra
-    #mv "${srcdir}/extra" tools/
 
     # Install clang-format editor integration files (FS#38485)
     # Destination paths are copied from clang-format/CMakeLists.txt
