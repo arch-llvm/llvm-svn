@@ -10,12 +10,12 @@
 pkgbase=llvm-svn
 pkgname=('llvm-svn' 'llvm-libs-svn' 'llvm-ocaml-svn' 'clang-svn' 'clang-analyzer-svn' 'clang-tools-extra-svn')
 _pkgname='llvm'
-pkgver=3.8.0_r243841
+pkgver=3.8.0_r243852
 pkgrel=1
 arch=('i686' 'x86_64')
 url="http://llvm.org"
 license=('custom:University of Illinois')
-makedepends=('subversion' 'libffi' 'python2' 'ocaml-ctypes' 'ocaml-findlib' 'python-sphinx' 'chrpath')
+makedepends=('cmake' 'subversion' 'libffi' 'python2' 'ocaml-ctypes' 'ocaml-findlib' 'python-sphinx')
 
 # this is always the latest svn so debug info can be useful
 options=('staticlibs' '!strip')
@@ -61,8 +61,6 @@ prepare() {
 build() {
     cd "${srcdir}/build"
 
-    export LLVM_CONFIG="/usr/lib/llvm/llvm-config"
-
     export PKG_CONFIG_PATH="/usr/lib/pkgconfig"
     _ffi_include_flags=$(pkg-config --cflags-only-I libffi)
     _ffi_libs_flags=$(pkg-config --libs-only-L libffi)
@@ -70,7 +68,6 @@ build() {
     cmake -G "Unix Makefiles" \
         -DCMAKE_BUILD_TYPE:STRING=Release \
         -DCMAKE_INSTALL_PREFIX:PATH=/usr \
-        -DBUILD_SHARED_LIBS:BOOL=ON \
         -DLLVM_APPEND_VC_REV:BOOL=ON \
         -DLLVM_ENABLE_RTTI:BOOL=ON \
         -DLLVM_ENABLE_FFI:BOOL=ON \
@@ -84,10 +81,8 @@ build() {
         -DLLVM_BUILD_LLVM_DYLIB:BOOL=ON \
         ../${_pkgname}
 
-    # Use only one thread to avoid timing errors
-    make -j1 ocaml_doc
-    make -j1 depend
-    make -j1
+    make ocaml_doc
+    make
 }
 
 package_llvm-svn() {
@@ -104,8 +99,7 @@ package_llvm-svn() {
         "s|^\([[:blank:]]*include(\"${srcdir}/build/tools/clang/cmake_install.cmake\")\)$|#\1|" \
         tools/cmake_install.cmake
 
-    # Use only one thread to avoid timing errors
-    make -j1 DESTDIR="${pkgdir}" install
+    make DESTDIR="${pkgdir}" install
 
     # The runtime library gets installed in llvm-libs
     rm -f "${pkgdir}"/usr/lib/libLLVM.so{,.*}
@@ -133,6 +127,9 @@ package_llvm-svn() {
         "${pkgdir}/usr/lib/python2.7/site-packages/"
     python2 -m compileall "${pkgdir}/usr/lib/python2.7/site-packages/llvm"
     python2 -O -m compileall "${pkgdir}/usr/lib/python2.7/site-packages/llvm"
+
+    # Clean up documentation
+    rm -rf "${pkgdir}/usr/share/doc/llvm/html/_sources"
 
     install -Dm644 "${srcdir}/${_pkgname}/LICENSE.TXT" "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
 }
