@@ -6,4 +6,8 @@ _IMPORTANT: This PKGBUILD uses a slightly different version scheme. Instead of b
 
 ## TODO
 
-* Although the PKGBUILD works (or at least pretends to), lots of things still need refining.
+* Lots of things need refining.
+
+## BUGS
+
+* Often, an abnormal libLLVM.so is produced, which also leads to build failure in llvm-c-test (see issue #1).
