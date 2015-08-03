@@ -6,4 +6,8 @@ ___IMPORTANT:___ _This PKGBUILD uses a different version scheme, which tries to 
 
 ## TODO
 
-* Lots of things need refining. Some nasty bugs may still be lurking around.
+* Lots of things need refining. Some nasty bugs ~~may be~~ are still lurking around.
+
+## BUGS
+
+* libLLVM.so doesn't export all expected symbols, which leads to "undefined reference" build errors in e.g. Mesa. See issue [#2](https://github.com/kerberizer/llvm-svn/issues/2) for more information.
