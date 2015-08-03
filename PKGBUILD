@@ -10,7 +10,7 @@
 pkgbase=llvm-svn
 pkgname=('llvm-svn' 'llvm-libs-svn' 'llvm-ocaml-svn' 'clang-svn' 'clang-analyzer-svn' 'clang-tools-extra-svn')
 _pkgname='llvm'
-pkgver=3.8.0_r243852
+pkgver=3.8.0svn_r243863
 pkgrel=1
 arch=('i686' 'x86_64')
 url="http://llvm.org"
@@ -39,7 +39,11 @@ _ocamlver()
 pkgver()
 {
     cd "${srcdir}/${_pkgname}"
-    echo $(sed -n '/^AC_INIT/s|^.*,\[\([[:digit:]\.]\+\)svn\],.*$|\1|p' \
+
+    # This will almost match the output of `llvm-config --version` when the
+    # LLVM_APPEND_VC_REV cmake flag is turned on. The only difference is
+    # dash being replaced with underscore because of Pacman requirements.
+    echo $(sed -n '/^AC_INIT/s|^.*,\[\([[:digit:]\.]\+svn\)\],.*$|\1|p' \
         autoconf/configure.ac)_r$(svnversion | tr -d [A-z])
 }
 
@@ -65,6 +69,8 @@ build() {
     _ffi_include_flags=$(pkg-config --cflags-only-I libffi)
     _ffi_libs_flags=$(pkg-config --libs-only-L libffi)
 
+    # LLVM_BUILD_LLVM_DYLIB: Build the dynamic runtime libs (e.g. libLLVM.so)
+    # LLVM_BINUTILS_INCDIR: Must be set for the LLVMgold plugin to be built.
     cmake -G "Unix Makefiles" \
         -DCMAKE_BUILD_TYPE:STRING=Release \
         -DCMAKE_INSTALL_PREFIX:PATH=/usr \
@@ -79,6 +85,7 @@ build() {
         -DSPHINX_OUTPUT_MAN:BOOL=ON \
         -DSPHINX_WARNINGS_AS_ERRORS:BOOL=OFF \
         -DLLVM_BUILD_LLVM_DYLIB:BOOL=ON \
+        -DLLVM_BINUTILS_INCDIR:PATH=/usr/include \
         ../${_pkgname}
 
     make ocaml_doc
@@ -101,8 +108,9 @@ package_llvm-svn() {
 
     make DESTDIR="${pkgdir}" install
 
-    # The runtime library gets installed in llvm-libs
-    rm -f "${pkgdir}"/usr/lib/libLLVM.so{,.*}
+    # The runtime libraries get installed in llvm-libs-svn
+    rm -f "${pkgdir}"/usr/lib/lib{LLVM,LTO}.so{,.*}
+    mv -f "${pkgdir}"/usr/lib/{BugpointPasses,LLVMgold}.so "${srcdir}/"
 
     # Clang libraries and OCaml bindings go to separate packages
     rm -rf "${srcdir}"/{clang,ocaml.{doc,lib}}
@@ -143,7 +151,21 @@ package_llvm-libs-svn() {
 
     cd "${srcdir}/build"
 
-    make DESTDIR="${pkgdir}" install-LLVM
+    make DESTDIR="${pkgdir}" install-{LLVM,LTO}
+
+    # Moved from the llvm-svn package here
+    mv "${srcdir}"/{BugpointPasses,LLVMgold}.so "${pkgdir}/usr/lib/"
+
+    # Ref: http://llvm.org/docs/GoldPlugin.html
+    install -m755 -d "${pkgdir}/usr/lib/bfd-plugins"
+    ln -s {/usr/lib,"${pkgdir}/usr/lib/bfd-plugins"}/LLVMgold.so
+
+    # Must have a symlink that corresponds to the output of `llvm-config --version`.
+    # Without it, some builds, e.g. Mesa, might fail for "lack of shared libraries".
+    for _shlib in lib{LLVM,LTO}.so ; do
+        ln -s "${_shlib}.$(echo ${pkgver} | cut -d _ -f 1)" \
+            "${pkgdir}/usr/lib/${_shlib}.$(echo ${pkgver} | tr _ -)"
+    done
 
     install -Dm644 "${srcdir}/${_pkgname}/LICENSE.TXT" "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
 }
@@ -265,3 +287,5 @@ package_clang-tools-extra-svn() {
 
     install -Dm644 "${srcdir}/${_pkgname}/LICENSE.TXT" "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
 }
+
+# vim:set ts=4 sts=4 sw=4 et:
