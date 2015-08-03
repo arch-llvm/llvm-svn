@@ -10,7 +10,7 @@
 pkgbase=llvm-svn
 pkgname=('llvm-svn' 'llvm-libs-svn' 'llvm-ocaml-svn' 'clang-svn' 'clang-analyzer-svn' 'clang-tools-extra-svn')
 _pkgname='llvm'
-pkgver=3.8.0svn_r243874
+pkgver=3.8.0svn_r243893
 pkgrel=1
 arch=('i686' 'x86_64')
 url="http://llvm.org"
@@ -69,6 +69,46 @@ build() {
     _ffi_include_flags=$(pkg-config --cflags-only-I libffi)
     _ffi_libs_flags=$(pkg-config --libs-only-L libffi)
 
+    # libLLVM.so doesn't include by default all components that we want to have.
+    # Therefore, we use the LLVM_DYLIB_COMPONENTS cmake variable futher below to
+    # add the desired ones (e.g. Option), but in order to be flexible we need to
+    # determine the default list of components from tools/llvm-shlib/CMakeLists.txt.
+    # We use some awk-ward magic to extract the values and format them appropriately.
+    _dylib_awk_cmds="\
+        /^[[:blank:]]*set\\(LLVM_DYLIB_COMPONENTS$/,/^[[:blank:]]*\\)$/ { \
+            if ( \
+                substr(\$1,1,4) != \"set(\" \
+                && substr(\$1,1,1) != \")\" \
+                && substr(\$1,1,2) != \"\${\" \
+            ) \
+            components=components\$1\";\" \
+        } END { print components }"
+
+    _dylib_def_comp=$(
+        awk "${_dylib_awk_cmds}" ../${_pkgname}/tools/llvm-shlib/CMakeLists.txt
+    )
+
+    # Find the targets in the default category 'all' (since we don't set them
+    # explicitly with LLVM_TARGETS_TO_BUILD, this is what gets built). We'll
+    # then have to list them manually in LLVM_DYLIB_COMPONENTS, otherwise
+    # (somewhat surprisingly) they don't get exported from libLLVM.so.
+    _tgts_awk_cmds="\
+        /^[[:blank:]]*set\\(LLVM_ALL_TARGETS$/,/^[[:blank:]]*\\)$/ { \
+            if ( \
+                substr(\$1,1,4) != \"set(\" \
+                && substr(\$1,1,1) != \")\" \
+                && substr(\$1,1,2) != \"\${\" \
+            ) \
+            targets=targets\$1\";\" \
+        } END { print targets }"
+
+    _avail_tgts=$(
+        awk "${_tgts_awk_cmds}" ../${_pkgname}/CMakeLists.txt
+    )
+
+    # Finally, here we set the additional components to export from libLLVM.so
+    _dylib_add_comp="Option;"
+
     # LLVM_BUILD_LLVM_DYLIB: Build the dynamic runtime libraries (e.g. libLLVM.so).
     # LLVM_DYLIB_EXPORT_ALL: Export all symbols in the dynamic libs, not just the C API.
     # LLVM_BINUTILS_INCDIR: Set to binutils' plugin-api.h location in order to build LLVMgold.
@@ -86,6 +126,7 @@ build() {
         -DSPHINX_OUTPUT_MAN:BOOL=ON \
         -DSPHINX_WARNINGS_AS_ERRORS:BOOL=OFF \
         -DLLVM_BUILD_LLVM_DYLIB:BOOL=ON \
+        -DLLVM_DYLIB_COMPONENTS:STRING="${_dylib_def_comp}${_dylib_add_comp}${_avail_tgts}" \
         -DLLVM_DYLIB_EXPORT_ALL:BOOL=ON \
         -DLLVM_BINUTILS_INCDIR:PATH=/usr/include \
         ../${_pkgname}
