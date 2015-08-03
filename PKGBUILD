@@ -162,9 +162,13 @@ package_llvm-libs-svn() {
 
     # Must have a symlink that corresponds to the output of `llvm-config --version`.
     # Without it, some builds, e.g. Mesa, might fail for "lack of shared libraries".
-    for _shlib in lib{LLVM,LTO}.so ; do
-        ln -s "${_shlib}.$(echo ${pkgver} | cut -d _ -f 1)" \
-            "${pkgdir}/usr/lib/${_shlib}.$(echo ${pkgver} | tr _ -)"
+    for _shlib in lib{LLVM,LTO} ; do
+        # libLLVM.so.3.8.0svn-r123456
+        ln -s "${_shlib}.so.$(echo ${pkgver} | cut -d _ -f 1)" \
+            "${pkgdir}/usr/lib/${_shlib}.so.$(echo ${pkgver} | tr _ -)"
+        # libLLVM-3.8.0svn-r123456.so
+        ln -s "${_shlib}.so.$(echo ${pkgver} | cut -d _ -f 1)" \
+            "${pkgdir}/usr/lib/${_shlib}-$(echo ${pkgver} | tr _ -).so"
     done
 
     install -Dm644 "${srcdir}/${_pkgname}/LICENSE.TXT" "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
