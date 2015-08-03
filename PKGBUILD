@@ -10,7 +10,7 @@
 pkgbase=llvm-svn
 pkgname=('llvm-svn' 'llvm-libs-svn' 'llvm-ocaml-svn' 'clang-svn' 'clang-analyzer-svn' 'clang-tools-extra-svn')
 _pkgname='llvm'
-pkgver=3.8.0svn_r243863
+pkgver=3.8.0svn_r243874
 pkgrel=1
 arch=('i686' 'x86_64')
 url="http://llvm.org"
@@ -69,8 +69,9 @@ build() {
     _ffi_include_flags=$(pkg-config --cflags-only-I libffi)
     _ffi_libs_flags=$(pkg-config --libs-only-L libffi)
 
-    # LLVM_BUILD_LLVM_DYLIB: Build the dynamic runtime libs (e.g. libLLVM.so)
-    # LLVM_BINUTILS_INCDIR: Must be set for the LLVMgold plugin to be built.
+    # LLVM_BUILD_LLVM_DYLIB: Build the dynamic runtime libraries (e.g. libLLVM.so).
+    # LLVM_DYLIB_EXPORT_ALL: Export all symbols in the dynamic libs, not just the C API.
+    # LLVM_BINUTILS_INCDIR: Set to binutils' plugin-api.h location in order to build LLVMgold.
     cmake -G "Unix Makefiles" \
         -DCMAKE_BUILD_TYPE:STRING=Release \
         -DCMAKE_INSTALL_PREFIX:PATH=/usr \
@@ -85,10 +86,16 @@ build() {
         -DSPHINX_OUTPUT_MAN:BOOL=ON \
         -DSPHINX_WARNINGS_AS_ERRORS:BOOL=OFF \
         -DLLVM_BUILD_LLVM_DYLIB:BOOL=ON \
+        -DLLVM_DYLIB_EXPORT_ALL:BOOL=ON \
         -DLLVM_BINUTILS_INCDIR:PATH=/usr/include \
         ../${_pkgname}
 
+    # Must run this target independently, or else docs/cmake_install.cmake will fail.
+    #
+    # WARNING: Make sure that there isn't an incompatible llvm-ocaml package installed,
+    # or else the build will fail with "inconsistent assumptions over interface" errors.
     make ocaml_doc
+
     make
 }
 
