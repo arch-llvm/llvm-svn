@@ -10,7 +10,7 @@
 pkgbase=llvm-svn
 pkgname=('llvm-svn' 'llvm-libs-svn' 'llvm-ocaml-svn' 'clang-svn' 'clang-analyzer-svn' 'clang-tools-extra-svn')
 _pkgname='llvm'
-pkgver=3.8.0svn_r243893
+pkgver=3.8.0svn_r243996
 pkgrel=1
 arch=('i686' 'x86_64')
 url="http://llvm.org"
@@ -20,16 +20,23 @@ makedepends=('cmake' 'subversion' 'libffi' 'python2' 'ocaml-ctypes' 'ocaml-findl
 # this is always the latest svn so debug info can be useful
 options=('staticlibs' '!strip')
 
-source=("${_pkgname}::svn+http://llvm.org/svn/llvm-project/llvm/trunk"
-        "clang::svn+http://llvm.org/svn/llvm-project/cfe/trunk"
-        "clang-tools-extra::svn+http://llvm.org/svn/llvm-project/clang-tools-extra/trunk"
-        "compiler-rt::svn+http://llvm.org/svn/llvm-project/compiler-rt/trunk"
-        llvm-Config-llvm-config.h)
-sha256sums=('SKIP'
-            'SKIP'    
-            'SKIP'
-            'SKIP'
-            '597dc5968c695bbdbb0eac9e8eb5117fcd2773bc91edf5ec103ecffffab8bc48')
+source=(
+    "${_pkgname}::svn+http://llvm.org/svn/llvm-project/llvm/trunk"
+    "clang::svn+http://llvm.org/svn/llvm-project/cfe/trunk"
+    "clang-tools-extra::svn+http://llvm.org/svn/llvm-project/clang-tools-extra/trunk"
+    "compiler-rt::svn+http://llvm.org/svn/llvm-project/compiler-rt/trunk"
+    llvm-Config-llvm-config.h
+    llvm_tools_shlib_CMakeLists.patch
+)
+
+sha256sums=(
+    'SKIP'
+    'SKIP'
+    'SKIP'
+    'SKIP'
+    '597dc5968c695bbdbb0eac9e8eb5117fcd2773bc91edf5ec103ecffffab8bc48'
+    'f176e58b1f07aa3859f9d4b67e17eac88ad4de2f5d501ef968549d0419e76f65'
+)
 
 _ocamlver()
 {
@@ -58,6 +65,9 @@ prepare() {
     sed -e 's|^\([[:blank:]]*DESTINATION[[:blank:]]\+\)docs/html|\1share/doc|' \
         -e 's|^\([[:blank:]]*DESTINATION[[:blank:]]\+\)docs/ocaml/html|\1share/doc/ocaml|' \
         -i docs/CMakeLists.txt
+
+    # https://llvm.org/bugs/show_bug.cgi?id=24157
+    patch -p2 -i "${srcdir}/llvm_tools_shlib_CMakeLists.patch"
 
     mkdir -p "${srcdir}/build"
 }
@@ -107,7 +117,7 @@ build() {
     )
 
     # Finally, here we set the additional components to export from libLLVM.so
-    _dylib_add_comp="Option;"
+    _dylib_add_comp="Option;ProfileData;"
 
     # LLVM_BUILD_LLVM_DYLIB: Build the dynamic runtime libraries (e.g. libLLVM.so).
     # LLVM_DYLIB_EXPORT_ALL: Export all symbols in the dynamic libs, not just the C API.
