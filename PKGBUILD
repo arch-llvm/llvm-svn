@@ -8,14 +8,33 @@
 # Contributor: Luchesar V. ILIEV <luchesar%2eiliev%40gmail%2ecom>
 
 pkgbase=llvm-svn
-pkgname=('llvm-svn' 'llvm-libs-svn' 'llvm-ocaml-svn' 'clang-svn' 'clang-analyzer-svn' 'clang-tools-extra-svn')
+
+pkgname=(
+    'llvm-svn'
+    'llvm-libs-svn'
+    'llvm-ocaml-svn'
+    'clang-svn'
+    'clang-analyzer-svn'
+    'clang-tools-extra-svn'
+)
 _pkgname='llvm'
-pkgver=3.8.0svn_r243996
+
+pkgver=3.8.0svn_r244039
 pkgrel=1
+
 arch=('i686' 'x86_64')
 url="http://llvm.org"
 license=('custom:University of Illinois')
-makedepends=('cmake' 'subversion' 'libffi' 'python2' 'ocaml-ctypes' 'ocaml-findlib' 'python-sphinx')
+
+makedepends=(
+    'cmake'
+    'subversion'
+    'libffi'
+    'python2'
+    'ocaml-ctypes'
+    'ocaml-findlib'
+    'python-sphinx'
+)
 
 # this is always the latest svn so debug info can be useful
 options=('staticlibs' '!strip')
@@ -38,13 +57,11 @@ sha256sums=(
     'f176e58b1f07aa3859f9d4b67e17eac88ad4de2f5d501ef968549d0419e76f65'
 )
 
-_ocamlver()
-{
+_ocamlver() {
     pacman -Q ocaml | awk '{print $2}' | cut -d - -f1 | cut -d . -f1,2,3
 }
 
-pkgver()
-{
+pkgver() {
     cd "${srcdir}/${_pkgname}"
 
     # This will almost match the output of `llvm-config --version` when the
@@ -95,7 +112,7 @@ build() {
         } END { print components }"
 
     _dylib_def_comp=$(
-        awk "${_dylib_awk_cmds}" ../${_pkgname}/tools/llvm-shlib/CMakeLists.txt
+        awk "${_dylib_awk_cmds}" "../${_pkgname}/tools/llvm-shlib/CMakeLists.txt"
     )
 
     # Find the targets in the default category 'all' (since we don't set them
@@ -113,7 +130,7 @@ build() {
         } END { print targets }"
 
     _avail_tgts=$(
-        awk "${_tgts_awk_cmds}" ../${_pkgname}/CMakeLists.txt
+        awk "${_tgts_awk_cmds}" "../${_pkgname}/CMakeLists.txt"
     )
 
     # Finally, here we set the additional components to export from libLLVM.so
@@ -128,8 +145,8 @@ build() {
         -DLLVM_APPEND_VC_REV:BOOL=ON \
         -DLLVM_ENABLE_RTTI:BOOL=ON \
         -DLLVM_ENABLE_FFI:BOOL=ON \
-        -DFFI_INCLUDE_DIR:PATH=${_ffi_include_flags#-I} \
-        -DFFI_LIBRARY_DIR:PATH=${_ffi_libs_flags#-L} \
+        -DFFI_INCLUDE_DIR:PATH="${_ffi_include_flags#-I}" \
+        -DFFI_LIBRARY_DIR:PATH="${_ffi_libs_flags#-L}" \
         -DLLVM_BUILD_DOCS:BOOL=ON \
         -DLLVM_ENABLE_SPHINX:BOOL=ON \
         -DSPHINX_OUTPUT_HTML:BOOL=ON \
@@ -139,7 +156,7 @@ build() {
         -DLLVM_DYLIB_COMPONENTS:STRING="${_dylib_def_comp}${_dylib_add_comp}${_avail_tgts}" \
         -DLLVM_DYLIB_EXPORT_ALL:BOOL=ON \
         -DLLVM_BINUTILS_INCDIR:PATH=/usr/include \
-        ../${_pkgname}
+        "../${_pkgname}"
 
     # Must run this target independently, or else docs/cmake_install.cmake will fail.
     #
