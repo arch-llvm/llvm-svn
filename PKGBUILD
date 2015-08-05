@@ -19,7 +19,7 @@ pkgname=(
 )
 _pkgname='llvm'
 
-pkgver=3.8.0svn_r244039
+pkgver=3.8.0svn_r244131
 pkgrel=1
 
 arch=('i686' 'x86_64')
@@ -205,11 +205,11 @@ package_llvm-svn() {
     fi
 
     # Install Python bindings
-    install -m755 -d "${pkgdir}/usr/lib/python2.7/site-packages"
-    cp -r "${srcdir}/llvm/bindings/python/llvm" \
-        "${pkgdir}/usr/lib/python2.7/site-packages/"
-    python2 -m compileall "${pkgdir}/usr/lib/python2.7/site-packages/llvm"
-    python2 -O -m compileall "${pkgdir}/usr/lib/python2.7/site-packages/llvm"
+    _py_sitepkg_loc="${pkgdir}/usr/lib/python2.7/site-packages"
+    install -m755 -d "${_py_sitepkg_loc}"
+    cp -r "${srcdir}/llvm/bindings/python/llvm" "${_py_sitepkg_loc}/"
+    python2 -m compileall "${_py_sitepkg_loc}/llvm"
+    python2 -O -m compileall "${_py_sitepkg_loc}/llvm"
 
     # Clean up documentation
     rm -rf "${pkgdir}/usr/share/doc/llvm/html/_sources"
@@ -283,33 +283,19 @@ package_clang-svn() {
 
     make DESTDIR="${pkgdir}" install
 
-    # Install clang-format editor integration files (FS#38485)
-    # Destination paths are copied from clang-format/CMakeLists.txt
-    install -m755 -d "$pkgdir/usr/share/clang"
-    (
-        cd "${srcdir}/llvm/tools/clang/tools/clang-format"
-        cp clang-format-diff.py \
-            clang-format-sublime.py \
-            clang-format.el \
-            clang-format.py \
-            "${pkgdir}/usr/share/clang/"
-
-        cp git-clang-format "${pkgdir}/usr/bin/"
-
-        sed -e 's|/usr/bin/python$|&2|' \
-            -i "${pkgdir}/usr/bin/git-clang-format" \
-            -i "${pkgdir}/usr/share/clang/clang-format-diff.py"
-    )
+    # These require python2
+    sed -i 's|^#!/usr/bin/env python$|&2|' \
+        "${pkgdir}/usr/bin/git-clang-format" \
+        "${pkgdir}/usr/share/clang/clang-format-diff.py"
 
     # Install Python bindings
-    install -m755 -d "${pkgdir}/usr/lib/python2.7/site-packages"
-    cp -r "${srcdir}/llvm/tools/clang/bindings/python/clang" \
-        "${pkgdir}/usr/lib/python2.7/site-packages/"
-    python2 -m compileall "${pkgdir}/usr/lib/python2.7/site-packages/clang"
-    python2 -O -m compileall "${pkgdir}/usr/lib/python2.7/site-packages/clang"
+    _py_sitepkg_loc="${pkgdir}/usr/lib/python2.7/site-packages"
+    install -m755 -d "${_py_sitepkg_loc}"
+    cp -r "${srcdir}/llvm/tools/clang/bindings/python/clang" "${_py_sitepkg_loc}/"
+    python2 -m compileall "${_py_sitepkg_loc}/clang"
+    python2 -O -m compileall "${_py_sitepkg_loc}/clang"
 
-    # Install html docs
-    cp -r docs/html/* "${pkgdir}/usr/share/doc/clang/html/"
+    # Clean up documentation
     rm -r "${pkgdir}/usr/share/doc/clang/html/_sources"
 
     install -Dm644 "${srcdir}/${_pkgname}/LICENSE.TXT" "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
@@ -339,11 +325,10 @@ package_clang-analyzer-svn() {
     mv "${pkgdir}/usr/lib/clang-analyzer/scan-build/scan-build.1" \
        "${pkgdir}/usr/share/man/man1/"
 
-    # Use Python 2
-    sed -e 's|env python$|&2|' \
-        -e 's|/usr/bin/python$|&2|' \
-        -i "${pkgdir}/usr/lib/clang-analyzer/scan-view/scan-view" \
-           "${pkgdir}/usr/lib/clang-analyzer/scan-build/set-xcode-analyzer"
+    # These require python2
+    sed -i 's|^#!/usr/bin/env python$|&2|' \
+        "${pkgdir}/usr/lib/clang-analyzer/scan-view/scan-view" \
+        "${pkgdir}/usr/lib/clang-analyzer/scan-build/set-xcode-analyzer"
 
     # Compile Python scripts
     python2 -m compileall "${pkgdir}/usr/lib/clang-analyzer"
