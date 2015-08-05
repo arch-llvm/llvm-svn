@@ -19,11 +19,11 @@ pkgname=(
 )
 _pkgname='llvm'
 
-pkgver=3.8.0svn_r244131
+pkgver=3.8.0svn_r244154
 pkgrel=1
 
 arch=('i686' 'x86_64')
-url="http://llvm.org"
+url='http://llvm.org/'
 license=('custom:University of Illinois')
 
 makedepends=(
@@ -41,9 +41,9 @@ options=('staticlibs' '!strip')
 
 source=(
     "${_pkgname}::svn+http://llvm.org/svn/llvm-project/llvm/trunk"
-    "clang::svn+http://llvm.org/svn/llvm-project/cfe/trunk"
-    "clang-tools-extra::svn+http://llvm.org/svn/llvm-project/clang-tools-extra/trunk"
-    "compiler-rt::svn+http://llvm.org/svn/llvm-project/compiler-rt/trunk"
+    'clang::svn+http://llvm.org/svn/llvm-project/cfe/trunk'
+    'clang-tools-extra::svn+http://llvm.org/svn/llvm-project/clang-tools-extra/trunk'
+    'compiler-rt::svn+http://llvm.org/svn/llvm-project/compiler-rt/trunk'
     llvm-Config-llvm-config.h
     llvm_tools_shlib_CMakeLists.patch
 )
@@ -58,7 +58,7 @@ sha256sums=(
 )
 
 _ocamlver() {
-    pacman -Q ocaml | awk '{print $2}' | cut -d - -f1 | cut -d . -f1,2,3
+    pacman -Q ocaml | awk '{ print $2 }' | cut -d - -f 1 | cut -d . -f 1,2,3
 }
 
 pkgver() {
@@ -92,7 +92,7 @@ prepare() {
 build() {
     cd "${srcdir}/build"
 
-    export PKG_CONFIG_PATH="/usr/lib/pkgconfig"
+    export PKG_CONFIG_PATH='/usr/lib/pkgconfig'
     _ffi_include_flags=$(pkg-config --cflags-only-I libffi)
     _ffi_libs_flags=$(pkg-config --libs-only-L libffi)
 
@@ -134,12 +134,12 @@ build() {
     )
 
     # Finally, here we set the additional components to export from libLLVM.so
-    _dylib_add_comp="Option;ProfileData;"
+    _dylib_add_comp='Option;ProfileData;'
 
     # LLVM_BUILD_LLVM_DYLIB: Build the dynamic runtime libraries (e.g. libLLVM.so).
     # LLVM_DYLIB_EXPORT_ALL: Export all symbols in the dynamic libs, not just the C API.
-    # LLVM_BINUTILS_INCDIR: Set to binutils' plugin-api.h location in order to build LLVMgold.
-    cmake -G "Unix Makefiles" \
+    # LLVM_BINUTILS_INCDIR:  Set to binutils' plugin-api.h location in order to build LLVMgold.
+    cmake -G 'Unix Makefiles' \
         -DCMAKE_BUILD_TYPE:STRING=Release \
         -DCMAKE_INSTALL_PREFIX:PATH=/usr \
         -DLLVM_APPEND_VC_REV:BOOL=ON \
@@ -168,8 +168,8 @@ build() {
 }
 
 package_llvm-svn() {
-    pkgdesc="Low Level Virtual Machine"
-    depends=("llvm-libs-svn=$pkgver-$pkgrel" 'perl')
+    pkgdesc='The LLVM Compiler Infrastructure'
+    depends=("llvm-libs-svn=${pkgver}-${pkgrel}" 'perl')
     provides=('llvm')
     replaces=('llvm')
     conflicts=('llvm')
@@ -196,10 +196,9 @@ package_llvm-svn() {
     # Get rid of example Hello transformation
     rm -f "${pkgdir}"/usr/lib/*LLVMHello.*
 
-    if [[ $CARCH == x86_64 ]]; then
+    if [[ "${CARCH}" == "x86_64" ]]; then
         # Needed for multilib (https://bugs.archlinux.org/task/29951)
         # Header stubs are taken from Fedora
-        #for _header in config llvm-config; do
         mv "${pkgdir}/usr/include/llvm/Config/llvm-config"{,-64}.h
         cp "${srcdir}/llvm-Config-llvm-config.h" "${pkgdir}/usr/include/llvm/Config/llvm-config.h"
     fi
@@ -218,7 +217,7 @@ package_llvm-svn() {
 }
 
 package_llvm-libs-svn() {
-    pkgdesc="Low Level Virtual Machine (runtime library)"
+    pkgdesc='The LLVM Compiler Infrastructure (runtime library)'
     depends=('gcc-libs' 'zlib' 'libffi' 'ncurses')
     provides=('llvm-libs')
     replaces=('llvm-libs')
@@ -250,8 +249,8 @@ package_llvm-libs-svn() {
 }
 
 package_llvm-ocaml-svn() {
-    pkgdesc="OCaml bindings for LLVM"
-    depends=("llvm-svn=$pkgver-$pkgrel" "ocaml=$(_ocamlver)" 'ocaml-ctypes')
+    pkgdesc='OCaml bindings for LLVM'
+    depends=("llvm-svn=${pkgver}-${pkgrel}" "ocaml=$(_ocamlver)" 'ocaml-ctypes')
     provides=('llvm-ocaml')
     replaces=('llvm-ocaml')
     conflicts=('llvm-ocaml')
@@ -267,9 +266,9 @@ package_llvm-ocaml-svn() {
 }
 
 package_clang-svn() {
-    pkgdesc="C language family frontend for LLVM"
-    url="http://clang.llvm.org/"
-    depends=("llvm-svn=$pkgver-$pkgrel" 'gcc')
+    pkgdesc='C language family frontend for LLVM'
+    url='http://clang.llvm.org/'
+    depends=("llvm-svn=${pkgver}-${pkgrel}" 'gcc')
     provides=('clang')
     replaces=('clang')
     conflicts=('clang')
@@ -302,9 +301,9 @@ package_clang-svn() {
 }
 
 package_clang-analyzer-svn() {
-    pkgdesc="A source code analysis framework"
-    url="http://clang-analyzer.llvm.org/"
-    depends=("clang-svn=$pkgver-$pkgrel" 'python2')
+    pkgdesc='Source code analysis tool for Clang that finds bugs in C, C++, and Objective-C programs'
+    url='http://clang-analyzer.llvm.org/'
+    depends=("clang-svn=${pkgver}-${pkgrel}" 'python2')
     provides=('clang-analyzer')
     replaces=('clang-analyzer')
     conflicts=('clang-analyzer')
@@ -313,8 +312,8 @@ package_clang-analyzer-svn() {
 
     install -m755 -d "${pkgdir}"/usr/{bin,lib/clang-analyzer}
     for _tool in scan-{build,view}; do
-        cp -r tools/${_tool} "${pkgdir}/usr/lib/clang-analyzer/"
-        ln -s /usr/lib/clang-analyzer/${_tool}/${_tool} "${pkgdir}/usr/bin/"
+        cp -r "tools/${_tool}" "${pkgdir}/usr/lib/clang-analyzer/"
+        ln -s "/usr/lib/clang-analyzer/${_tool}/${_tool}" "${pkgdir}/usr/bin/"
     done
 
     # scan-build looks for clang within the same directory
@@ -322,8 +321,7 @@ package_clang-analyzer-svn() {
 
     # Relocate man page
     install -m755 -d "${pkgdir}/usr/share/man/man1"
-    mv "${pkgdir}/usr/lib/clang-analyzer/scan-build/scan-build.1" \
-       "${pkgdir}/usr/share/man/man1/"
+    mv "${pkgdir}/usr/lib/clang-analyzer/scan-build/scan-build.1" "${pkgdir}/usr/share/man/man1/"
 
     # These require python2
     sed -i 's|^#!/usr/bin/env python$|&2|' \
@@ -338,9 +336,9 @@ package_clang-analyzer-svn() {
 }
 
 package_clang-tools-extra-svn() {
-    pkgdesc="Extra tools built using Clang's tooling APIs"
-    url="http://clang.llvm.org/"
-    depends=("clang-svn=$pkgver-$pkgrel")
+    pkgdesc='Standalone tools for Clang, providing fast syntax checking, automatic formatting, refactoring, etc.'
+    url='http://clang.llvm.org/docs/ClangTools.html'
+    depends=("clang-svn=${pkgver}-${pkgrel}")
     provides=('clang-tools-extra')
     replaces=('clang-tools-extra')
     conflicts=('clang-tools-extra')
