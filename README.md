@@ -10,4 +10,4 @@ ___IMPORTANT:___ _This PKGBUILD uses a different version scheme, which tries to 
 
 ## BUGS
 
-* libLLVM.so doesn't export all expected symbols, which leads to "undefined reference" build errors in e.g. Mesa. See issue [#2](https://github.com/kerberizer/llvm-svn/issues/2) for more information.
+* libLLVM.so might not be exporting all expected symbols, which, in turn, may lead to "undefined reference" build errors. See issue [#2](https://github.com/kerberizer/llvm-svn/issues/2) for more information.
