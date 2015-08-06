@@ -19,7 +19,7 @@ pkgname=(
 )
 _pkgname='llvm'
 
-pkgver=3.8.0svn_r244170
+pkgver=3.8.0svn_r244189
 pkgrel=1
 
 arch=('i686' 'x86_64')
@@ -28,12 +28,12 @@ license=('custom:University of Illinois')
 
 makedepends=(
     'cmake'
-    'subversion'
     'libffi'
-    'python2'
-    'python2-sphinx'
     'ocaml-ctypes'
     'ocaml-findlib'
+    'python2'
+    'python2-sphinx'
+    'subversion'
 )
 
 # this is always the latest svn so debug info can be useful
@@ -317,7 +317,7 @@ package_clang-svn() {
 }
 
 package_clang-analyzer-svn() {
-    pkgdesc='Source code analysis tool for Clang that finds bugs in C, C++, and Objective-C programs'
+    pkgdesc='Source code analysis tool for Clang, supporting C, C++, and Objective-C'
     url='http://clang-analyzer.llvm.org/'
     depends=(
         "clang-svn=${pkgver}-${pkgrel}"
@@ -357,7 +357,7 @@ package_clang-analyzer-svn() {
 }
 
 package_clang-tools-extra-svn() {
-    pkgdesc='Standalone tools for Clang, providing fast syntax checking, automatic formatting, refactoring, etc.'
+    pkgdesc='Standalone tools for Clang: syntax checking, formatting, refactoring, etc.'
     url='http://clang.llvm.org/docs/ClangTools.html'
     depends=(
         "clang-svn=${pkgver}-${pkgrel}"
