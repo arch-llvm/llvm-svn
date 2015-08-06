@@ -219,7 +219,7 @@ package_llvm-svn() {
 }
 
 package_llvm-libs-svn() {
-    pkgdesc='The LLVM Compiler Infrastructure (runtime library)'
+    pkgdesc='The LLVM Compiler Infrastructure (runtime libraries)'
     depends=(
         'libffi'
         'zlib'
