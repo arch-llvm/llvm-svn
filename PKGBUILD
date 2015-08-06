@@ -19,7 +19,7 @@ pkgname=(
 )
 _pkgname='llvm'
 
-pkgver=3.8.0svn_r244154
+pkgver=3.8.0svn_r244170
 pkgrel=1
 
 arch=('i686' 'x86_64')
@@ -31,9 +31,9 @@ makedepends=(
     'subversion'
     'libffi'
     'python2'
+    'python2-sphinx'
     'ocaml-ctypes'
     'ocaml-findlib'
-    'python-sphinx'
 )
 
 # this is always the latest svn so debug info can be useful
@@ -169,7 +169,9 @@ build() {
 
 package_llvm-svn() {
     pkgdesc='The LLVM Compiler Infrastructure'
-    depends=("llvm-libs-svn=${pkgver}-${pkgrel}" 'perl')
+    depends=(
+        "llvm-libs-svn=${pkgver}-${pkgrel}"
+    )
     provides=('llvm')
     replaces=('llvm')
     conflicts=('llvm')
@@ -218,7 +220,10 @@ package_llvm-svn() {
 
 package_llvm-libs-svn() {
     pkgdesc='The LLVM Compiler Infrastructure (runtime library)'
-    depends=('gcc-libs' 'zlib' 'libffi' 'ncurses')
+    depends=(
+        'libffi'
+        'zlib'
+    )
     provides=('llvm-libs')
     replaces=('llvm-libs')
     conflicts=('llvm-libs')
@@ -250,7 +255,11 @@ package_llvm-libs-svn() {
 
 package_llvm-ocaml-svn() {
     pkgdesc='OCaml bindings for LLVM'
-    depends=("llvm-svn=${pkgver}-${pkgrel}" "ocaml=$(_ocamlver)" 'ocaml-ctypes')
+    depends=(
+        "llvm-svn=${pkgver}-${pkgrel}"
+        "ocaml=$(_ocamlver)"
+        'ocaml-ctypes'
+    )
     provides=('llvm-ocaml')
     replaces=('llvm-ocaml')
     conflicts=('llvm-ocaml')
@@ -268,7 +277,12 @@ package_llvm-ocaml-svn() {
 package_clang-svn() {
     pkgdesc='C language family frontend for LLVM'
     url='http://clang.llvm.org/'
-    depends=("llvm-svn=${pkgver}-${pkgrel}" 'gcc')
+    depends=(
+        "llvm-svn=${pkgver}-${pkgrel}"
+    )
+    optdepends=(
+        'python2: git-clang-format and clang-format-diff.py support'
+    )
     provides=('clang')
     replaces=('clang')
     conflicts=('clang')
@@ -283,7 +297,9 @@ package_clang-svn() {
     make DESTDIR="${pkgdir}" install
 
     # These require python2
-    sed -i 's|^#!/usr/bin/env python$|&2|' \
+    sed -i \
+        -e 's|^#!/usr/bin/python$|&2|' \
+        -e 's|^#!/usr/bin/env python$|&2|' \
         "${pkgdir}/usr/bin/git-clang-format" \
         "${pkgdir}/usr/share/clang/clang-format-diff.py"
 
@@ -303,7 +319,10 @@ package_clang-svn() {
 package_clang-analyzer-svn() {
     pkgdesc='Source code analysis tool for Clang that finds bugs in C, C++, and Objective-C programs'
     url='http://clang-analyzer.llvm.org/'
-    depends=("clang-svn=${pkgver}-${pkgrel}" 'python2')
+    depends=(
+        "clang-svn=${pkgver}-${pkgrel}"
+        'python2'
+    )
     provides=('clang-analyzer')
     replaces=('clang-analyzer')
     conflicts=('clang-analyzer')
@@ -324,7 +343,9 @@ package_clang-analyzer-svn() {
     mv "${pkgdir}/usr/lib/clang-analyzer/scan-build/scan-build.1" "${pkgdir}/usr/share/man/man1/"
 
     # These require python2
-    sed -i 's|^#!/usr/bin/env python$|&2|' \
+    sed -i \
+        -e 's|^#!/usr/bin/python$|&2|' \
+        -e 's|^#!/usr/bin/env python$|&2|' \
         "${pkgdir}/usr/lib/clang-analyzer/scan-view/scan-view" \
         "${pkgdir}/usr/lib/clang-analyzer/scan-build/set-xcode-analyzer"
 
@@ -338,7 +359,9 @@ package_clang-analyzer-svn() {
 package_clang-tools-extra-svn() {
     pkgdesc='Standalone tools for Clang, providing fast syntax checking, automatic formatting, refactoring, etc.'
     url='http://clang.llvm.org/docs/ClangTools.html'
-    depends=("clang-svn=${pkgver}-${pkgrel}")
+    depends=(
+        "clang-svn=${pkgver}-${pkgrel}"
+    )
     provides=('clang-tools-extra')
     replaces=('clang-tools-extra')
     conflicts=('clang-tools-extra')
