@@ -9,3 +9,5 @@ Main development is in the master branch, while the AUR git repo is mirrored by 
 * libLLVM.so might not be exporting all expected symbols, which, in turn, may lead to "undefined reference" build errors. See issue [#2](https://github.com/kerberizer/llvm-svn/issues/2) for more information.
 
 * When an older or generally different version of llvm-ocaml{,-svn} is installed on the build system, the build would likely fail with _inconsistent assumptions over interface_ errors. The PKGBUILD will detect such situation and spit out an appropriate suggestion: namely, to either uninstall any currently installed llvm-ocaml* package before building, or, __preferably__, to build in a clean chroot, as [described](https://wiki.archlinux.org/index.php/DeveloperWiki:Building_in_a_Clean_Chroot) on the Arch Linux wiki.
+
+* [LLDB](http://lldb.llvm.org/) is not being built. The  [enh/lldb-svn](https://github.com/kerberizer/llvm-svn/tree/lldb-svn) branch does include it, but it is being held back for the time being, because of a conflicting package on AUR, [lldb-svn](https://aur.archlinux.org/packages/lldb-svn/).
