@@ -32,7 +32,7 @@ You may find helpful the topic "[mesa-git - latest videodrivers & issues](https:
 
 ## Building in a clean chroot example
 
-If you need a more detailed and specific example on how to build this package in a clean chroot, a crude excerpt from the build script of the _kerberizer_'s binary repo is presented here.
+If you need a more detailed and specific example on how to build this package in a clean chroot, a crude excerpt from the build script of the _kerberizer_'s binary repo is presented here. You can also check the [full script](https://github.com/kerberizer/pkg-rebuild-llvm).
 
 It is meant to allow building `lib32-llvm-svn` too, hence why `gcc-multilib` is used. The code takes advantage of multiple cores when building and compressing; the example here is tailored to an 8-core/threads system. The user's ccache cache is utilised as well, so frequent rebuilds can be much faster. If you don't sign your packages, omit the lines mentioning `PACKAGER` and `GPGKEY`, otherwise they need to be set correctly. The chroot (`${x86_64_chroot}`) is best set up in `/tmp`, but this requires a lot of RAM (most likely at least 32 GB, since `/tmp` is by default half the size of the physical RAM detected); second best solution is on an SSD. The latter goes for `~/.ccache` as well. Note that the latest versions of systemd mount `/tmp` with the nosuid flag. You need to turn this flag off before building on `/tmp`, or else the build will fail.
 
