@@ -133,8 +133,8 @@ prepare() {
     svn export --force "${srcdir}/libcxx" projects/libcxx
     svn export --force "${srcdir}/libcxxabi" projects/libcxxabi
 
-    sed -i 's/CREDITS.TXT/CREDITS/' llvm/projects/libcxx/LICENSE.TXT
-    sed -i 's/CREDITS.TXT/CREDITS/' llvm/projects/libcxxabi/LICENSE.TXT
+    sed -i 's/CREDITS.TXT/CREDITS/' projects/libcxx/LICENSE.TXT
+    sed -i 's/CREDITS.TXT/CREDITS/' projects/libcxxabi/LICENSE.TXT
 
     mkdir -p "${srcdir}/build"
 }
