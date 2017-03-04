@@ -3,6 +3,7 @@
 # Contributor: Armin K. <krejzi at email dot com>
 # Contributor: Christian Babeux <christian.babeux@0x80.ca>
 # Contributor: Evangelos Foutras <evangelos@foutrelis.com>
+# Contributor: Hesiod (https://github.com/hesiod)
 # Contributor: Roberto Alsina <ralsina@kde.org>
 # Contributor: Thomas Dziedzic < gostrc at gmail >
 # Contributor: Tomas Lindquist Olsen <tomas@famolsen.dk>
@@ -47,10 +48,12 @@ source=(
     'clang::svn+http://llvm.org/svn/llvm-project/cfe/trunk'
     'clang-tools-extra::svn+http://llvm.org/svn/llvm-project/clang-tools-extra/trunk'
     'compiler-rt::svn+http://llvm.org/svn/llvm-project/compiler-rt/trunk'
+    'lld::svn+http://llvm.org/svn/llvm-project/lld/trunk'
     'llvm-Config-llvm-config.h'
 )
 
 sha256sums=(
+    'SKIP'
     'SKIP'
     'SKIP'
     'SKIP'
@@ -141,10 +144,11 @@ pkgver() {
 prepare() {
     cd "${srcdir}/${_pkgname}"
 
-    # Anything added here should also be pruned in _install_licenses() above.
+    # Anything added here and packaged separately should be pruned in _install_licenses() above.
     svn export --force "${srcdir}/clang" tools/clang
     svn export --force "${srcdir}/clang-tools-extra" tools/clang/tools/extra
     svn export --force "${srcdir}/compiler-rt" projects/compiler-rt
+    svn export --force "${srcdir}/lld" tools/lld
 
     mkdir -p "${srcdir}/build"
 }
@@ -238,7 +242,7 @@ package_llvm-svn() {
     fi
 
     # Clean up documentation
-    rm -rf "${pkgdir}/usr/share/doc/llvm/html/_sources"
+    rm -rf "${pkgdir}/usr/share/doc/"{llvm,lld}"/html/_sources"
 
     _install_python_bindings "${srcdir}/llvm/bindings/python/llvm"
 
