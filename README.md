@@ -66,6 +66,12 @@ sudo /usr/bin/makechrootpkg -c -d ~/.ccache:/.ccache -r "${x86_64_chroot}"
 
 It's advisable to always start this from scratch, i.e. don't reuse the old chroot, but create it anew for each build (it uses the local pacman cache, so doesn't waste bandwidth, and if located in /tmp or on an SSD, is pretty fast).
 
+## FAQ
+
+__Q: Why is the source fetched over plain HTTP? You can change those links to `https://`.__
+
+__A:__ Unfortunately, the HTTPS support on `llvm.org` is badly broken. At least as of March 2017, the Qualys' SSL Labs test gives it [a miserable F grade](https://www.ssllabs.com/ssltest/analyze.html?d=llvm.org&clearCache=on), so it's arguable whether using HTTPS in this particular case would provide any real benefit to the users. It's also commonly accepted that a false sense of security tends to be worse than having no security at all.
+
 ## Bugs
 
 * When an older or generally different version of llvm-ocaml{,-svn} is installed on the build system, the build would likely fail with _inconsistent assumptions over interface_ errors. The PKGBUILD will detect such situation and spit out an appropriate suggestion: namely, to either uninstall any currently installed llvm-ocaml* package before building, or, __preferably__, to build in a clean chroot, as [described](https://wiki.archlinux.org/index.php/DeveloperWiki:Building_in_a_Clean_Chroot) on the Arch Linux wiki.
