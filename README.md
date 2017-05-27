@@ -26,6 +26,22 @@ Pre-built, binary packages are available from two unofficial repositories:
 
 Both repos provide `x86_64`, `i686` and `multilib` packages. _kerberizer_'s repo is also PGP signed.
 
+### Signature "unknown trust" error
+
+For PGP signed unofficial repositories to work correctly their signing key needs to be added to Pacman's keyring. The process is [described here](https://wiki.archlinux.org/index.php/Pacman/Package_signing#Adding_unofficial_keys). For the `llvm-svn` repo in particular, it boils down to:
+1. Fetch the necessary key from a keyserver:
+```
+# pacman-key -r 0x76563F75679E4525
+```
+2. Verify the key fingerprint; it must be __exactly__ `D16C F22D 27D1 091A 841C 4BE9 7656 3F75 679E 4525`:
+```
+$ pacman-key -f 0x76563F75679E4525
+```
+3. If the fingerprint matches, sign the key locally:
+```
+# pacman-key --lsign-key 0x76563F75679E4525
+```
+
 ## If using LLVM as Mesa dependency
 
 You may find helpful the topic "[mesa-git - latest videodrivers & issues](https://bbs.archlinux.org/viewtopic.php?id=212819)" on the Arch Linux forums.
