@@ -20,6 +20,8 @@ pkgname=(
     'clang-analyzer-svn'
     'clang-compiler-rt-svn'
     'clang-tools-extra-svn'
+    'libc++-svn'
+    'libc++abi-svn'
 )
 _pkgname='llvm'
 
@@ -49,11 +51,15 @@ source=(
     'clang::svn+http://llvm.org/svn/llvm-project/cfe/trunk'
     'clang-tools-extra::svn+http://llvm.org/svn/llvm-project/clang-tools-extra/trunk'
     'compiler-rt::svn+http://llvm.org/svn/llvm-project/compiler-rt/trunk'
+    'libcxx::svn+http://llvm.org/svn/llvm-project/libcxx/trunk'
+    'libcxxabi::svn+http://llvm.org/svn/llvm-project/libcxxabi/trunk'
     'lld::svn+http://llvm.org/svn/llvm-project/lld/trunk'
     'llvm-Config-llvm-config.h'
 )
 
 sha256sums=(
+    'SKIP'
+    'SKIP'
     'SKIP'
     'SKIP'
     'SKIP'
@@ -112,7 +118,9 @@ _install_licenses() {
         \( \
             -path "${srcdir}/${_pkgname}/tools/lld" -o \
             -path "${srcdir}/${_pkgname}/tools/clang" -o \
-            -path "${srcdir}/${_pkgname}/projects/compiler-rt" \
+            -path "${srcdir}/${_pkgname}/projects/compiler-rt" -o \
+            -path "${srcdir}/${_pkgname}/projects/libcxx" -o \
+            -path "${srcdir}/${_pkgname}/projects/libcxxabi" \
         \) -prune -o \
         \( \
             -iname 'license*' -o \
@@ -150,6 +158,8 @@ prepare() {
     svn export --force "${srcdir}/clang" tools/clang
     svn export --force "${srcdir}/clang-tools-extra" tools/clang/tools/extra
     svn export --force "${srcdir}/compiler-rt" projects/compiler-rt
+    svn export --force "${srcdir}/libcxx" projects/libcxx
+    svn export --force "${srcdir}/libcxxabi" projects/libcxxabi
     svn export --force "${srcdir}/lld" tools/lld
 
     mkdir -p "${srcdir}/build"
@@ -186,6 +196,8 @@ build() {
         -DFFI_INCLUDE_DIR:PATH="$(pkg-config --variable=includedir libffi)" \
         -DFFI_LIBRARY_DIR:PATH="$(pkg-config --variable=libdir libffi)" \
         -DLLVM_BUILD_DOCS:BOOL=ON \
+        -DLLVM_TOOL_LIBCXX_BUILD:BOOL=ON \
+        -DLLVM_TOOL_LIBCXXABI_BUILD:BOOL=ON \
         -DLLVM_ENABLE_SPHINX:BOOL=ON \
         -DSPHINX_OUTPUT_HTML:BOOL=ON \
         -DSPHINX_OUTPUT_MAN:BOOL=ON \
@@ -232,6 +244,11 @@ package_llvm-svn() {
     mv "${pkgdir}/usr/lib/clang" "${srcdir}/clang"
     mv "${pkgdir}/usr/lib/ocaml" "${srcdir}/ocaml.lib"
     mv "${pkgdir}/usr/share/doc/llvm/ocaml-html" "${srcdir}/ocaml.doc"
+
+    # Remove libc++ files
+    rm -rf "${pkgdir}/usr/include/c++" "${pkgdir}/usr/share/doc/libcxx"
+    rm -f  "${pkgdir}/usr/lib/libc++.*" "${pkgdir}/usr/lib/libc++abi.*"
+    rm -f  "${pkgdir}/usr/lib/libc++experimental.a"
 
     if [[ "${CARCH}" == "x86_64" ]]; then
         # Needed for multilib (https://bugs.archlinux.org/task/29951)
@@ -465,6 +482,37 @@ package_clang-tools-extra-svn() {
     make DESTDIR="${pkgdir}" install
 
     _install_licenses "${srcdir}/clang-tools-extra"
+}
+
+package_libc++-svn() {
+    pkgdesc='A new implementation of the C++ standard library, targeting C++11'
+    url='https://libcxx.llvm.org/'
+    depends=(
+        "libc++abi-svn=${pkgver}-${pkgrel}"
+    )
+    provides=('libc++')
+    replaces=('libc++')
+    conflicts=('libc++')
+
+    cd "${srcdir}/build/projects/libcxx"
+
+    make DESTDIR="${pkgdir}" install
+
+    _install_licenses "${srcdir}/libcxx"
+}
+
+package_libc++abi-svn() {
+    pkgdesc='A new implementation of low level support for a standard C++ library'
+    url='https://libcxxabi.llvm.org/'
+    provides=('libc++abi')
+    replaces=('libc++abi')
+    conflicts=('libc++abi')
+
+    cd "${srcdir}/build/projects/libcxxabi"
+
+    make DESTDIR="${pkgdir}" install
+
+    _install_licenses "${srcdir}/libcxxabi"
 }
 
 # vim:set ts=4 sts=4 sw=4 et:
