@@ -50,10 +50,12 @@ source=(
     'clang-tools-extra::svn+http://llvm.org/svn/llvm-project/clang-tools-extra/trunk'
     'compiler-rt::svn+http://llvm.org/svn/llvm-project/compiler-rt/trunk'
     'lld::svn+http://llvm.org/svn/llvm-project/lld/trunk'
+    'polly::svn+http://llvm.org/svn/llvm-project/polly/trunk'
     'llvm-Config-llvm-config.h'
 )
 
 sha256sums=(
+    'SKIP'
     'SKIP'
     'SKIP'
     'SKIP'
@@ -151,6 +153,7 @@ prepare() {
     svn export --force "${srcdir}/clang-tools-extra" tools/clang/tools/extra
     svn export --force "${srcdir}/compiler-rt" projects/compiler-rt
     svn export --force "${srcdir}/lld" tools/lld
+    svn export --force "${srcdir}/polly" tools/polly
 
     mkdir -p "${srcdir}/build"
 }
@@ -205,6 +208,7 @@ check() {
     # Also, disable the LLVM tests on i686 as they seem to fail too often there.
     [[ "${CARCH}" == "i686" ]] || LD_LIBRARY_PATH="${srcdir}/build/lib" make check
     make check-clang
+    make check-polly
 }
 
 package_llvm-svn() {
