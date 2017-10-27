@@ -26,6 +26,7 @@ _pkgname='llvm'
 
 pkgver=3.8.0svn_r247138
 pkgrel=1
+epoch=1
 
 arch=('i686' 'x86_64')
 url='https://llvm.org/'
@@ -180,7 +181,7 @@ build() {
     }
 
     export PKG_CONFIG_PATH='/usr/lib/pkgconfig'
-
+    export LDFLAGS="$LDFLAGS -pthread -lpthread -lm"
     # LLVM_BUILD_LLVM_DYLIB: Build the dynamic runtime libraries (e.g. libLLVM.so).
     # LLVM_LINK_LLVM_DYLIB:  Link our own tools against the libLLVM dynamic library, too.
     # LLVM_BINUTILS_INCDIR:  Set to binutils' plugin-api.h location in order to build LLVMgold.
