@@ -24,7 +24,7 @@ Pre-built, binary packages are available from two unofficial repositories:
 
 - _kerberizer_'s [llvm-svn](https://wiki.archlinux.org/index.php/Unofficial_user_repositories#llvm-svn), which is automatically rebuilt every 6 hours from this PKGBUILD and the latest SVN code. The packages are built against the [core/extra] repos. _kerberizer_ is the current maintainer.
 
-Both repos provide `x86_64`, `i686` and `multilib` packages. _kerberizer_'s repo is also PGP signed.
+Both repos provide `x86_64` and `multilib` packages. _kerberizer_'s repo is also PGP signed.
 
 ### Signature "unknown trust" error
 
