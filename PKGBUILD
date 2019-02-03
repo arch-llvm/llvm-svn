@@ -240,7 +240,7 @@ package_llvm-svn() {
 
     # The runtime libraries get installed in llvm-libs-svn
     rm -f "${pkgdir}"/usr/lib/lib{LLVM,LTO}{,-*}.so{,.*}
-    mv -f "${pkgdir}"/usr/lib/{BugpointPasses,LLVMgold,LLVMHello}.so "${srcdir}/"
+    mv -f "${pkgdir}"/usr/lib/LLVMgold.so "${srcdir}/"
 
     # Clang libraries and OCaml bindings go to separate packages
     rm -rf "${srcdir}"/{clang,ocaml.{doc,lib}}
@@ -281,7 +281,7 @@ package_llvm-libs-svn() {
     make DESTDIR="${pkgdir}" install-{LLVM,LTO}
 
     # Moved from the llvm-svn package here
-    mv "${srcdir}"/{BugpointPasses,LLVMgold,LLVMHello}.so "${pkgdir}/usr/lib/"
+    mv "${srcdir}"/LLVMgold.so "${pkgdir}/usr/lib/"
 
     # Ref: https://llvm.org/docs/GoldPlugin.html
     install -m755 -d "${pkgdir}/usr/lib/bfd-plugins"
